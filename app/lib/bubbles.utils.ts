@@ -1,12 +1,11 @@
 "use client";
-import * as PIXI from "pixi.js";
-
 import { Circle, PriceChangePercentage } from "@/types/bubbles.types";
-import { CoingeckoCoinData } from "@/types/coingecko.type";
+import { NFTCollectionData } from "@/types/nft.types";
+import * as PIXI from "pixi.js";
 import { PixiUtils } from "./pixi.utils";
 
 export type GenerateCirclesParams = {
-  coins: CoingeckoCoinData[];
+  collections: NFTCollectionData[];
   bubbleSort: PriceChangePercentage;
   scalingFactor: number;
 };
@@ -25,9 +24,9 @@ const { wallDamping, width, height, speed, elasticity, maxCircleSize, minCircleS
 const changeSizeStep = 2;
 
 export class BubblesUtils {
-  static getScalingFactor = (data: CoingeckoCoinData[], bubbleSort: PriceChangePercentage = PriceChangePercentage.HOUR): number => {
-    if (!data) return 1;
-    const max = data.map((item) => Math.abs(+item[bubbleSort]!));
+  static getScalingFactor = (data: NFTCollectionData[], bubbleSort: PriceChangePercentage = PriceChangePercentage.HOUR): number => {
+    if (!data || data.length === 0) return 1;
+    const max = data.map((item) => Math.abs(item[bubbleSort] || 0));
     let totalSquare = 0;
 
     for (let i = 0; i < max.length; i++) {
@@ -47,6 +46,8 @@ export class BubblesUtils {
         const text = textSprites[i];
         const text2 = text2Sprites[i];
 
+        if (!circle || !circleGraphic || !text || !text2) continue;
+
         const updateCircleChilds = () => {
           circleGraphic.texture = PixiUtils.createGradientTexture(circle.radius * 4, circle.color);
 
@@ -57,16 +58,16 @@ export class BubblesUtils {
           if (imageSprite) {
             imageSprite.width = circle.radius * (isFullSize ? 1.2 : 0.5);
             imageSprite.height = circle.radius * (isFullSize ? 1.2 : 0.5);
-            imageSprite.position = { x: 0, y: isFullSize ? 0 : -circle.radius / 2 };
+            imageSprite.position.set(0, isFullSize ? 0 : -circle.radius / 2);
           }
 
           const textStyle = new PIXI.TextStyle({
-            fontSize: isTextVisible ? fontSize + "px" : "1px",
+            fontSize: isTextVisible ? `${fontSize}px` : "1px",
             fill: "#ffffff",
           });
 
           const text2Style = new PIXI.TextStyle({
-            fontSize: isTextVisible ? fontSize * 0.5 + "px" : "1px",
+            fontSize: isTextVisible ? `${fontSize * 0.5}px` : "1px",
             fill: "#ffffff",
           });
 
@@ -83,22 +84,18 @@ export class BubblesUtils {
 
         // Check for collisions with walls
         if (circle.x - circle.radius < 0) {
-          circle.x = circle.radius; // Keep the circle inside the left wall
-          circle.vx *= -1;
-          circle.vx *= 1 - wallDamping; // Apply wall damping
+          circle.x = circle.radius;
+          circle.vx *= -1 * (1 - wallDamping);
         } else if (circle.x + circle.radius > width) {
-          circle.x = width - circle.radius; // Keep the circle inside the right wall
-          circle.vx *= -1;
-          circle.vx *= 1 - wallDamping; // Apply wall damping
+          circle.x = width - circle.radius;
+          circle.vx *= -1 * (1 - wallDamping);
         }
         if (circle.y - circle.radius < 0) {
-          circle.y = circle.radius; // Keep the circle inside the top wall
-          circle.vy *= -1;
-          circle.vy *= 1 - wallDamping; // Apply wall damping
+          circle.y = circle.radius;
+          circle.vy *= -1 * (1 - wallDamping);
         } else if (circle.y + circle.radius > height) {
-          circle.y = height - circle.radius; // Keep the circle inside the bottom wall
-          circle.vy *= -1;
-          circle.vy *= 1 - wallDamping; // Apply wall damping
+          circle.y = height - circle.radius;
+          circle.vy *= -1 * (1 - wallDamping);
         }
 
         // Check for collisions with other circles
@@ -109,10 +106,7 @@ export class BubblesUtils {
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < circle.radius + otherCircle.radius) {
-            // Colliding circles
             const angle = Math.atan2(dy, dx);
-
-            // Calculate the new velocities after collision with elasticity
             const totalRadius = circle.radius + otherCircle.radius;
             const overlap = totalRadius - distance;
             const force = overlap * elasticity;
@@ -127,21 +121,21 @@ export class BubblesUtils {
 
         // Update container position
         const container = circleGraphic.parent as PIXI.Container;
-        container.position.set(circle.x, circle.y);
+        if (container) {
+          container.position.set(circle.x, circle.y);
 
-        // Smoothly change the size of the circle
-        if (circle.radius !== circle.targetRadius) {
-          // container.children.forEach((item) => (item.cacheAsBitmap = false));
-          container.cacheAsBitmap = false;
+          // Smoothly change the size of the circle
+          if (circle.radius !== circle.targetRadius) {
+            container.cacheAsBitmap = false;
+            const sizeDifference = circle.targetRadius - circle.radius;
 
-          const sizeDifference = circle.targetRadius - circle.radius;
-
-          if (Math.abs(sizeDifference) <= changeSizeStep) {
-            circle.radius = circle.targetRadius;
-            container.cacheAsBitmap = true;
-          } else {
-            circle.radius > circle.targetRadius ? (circle.radius -= changeSizeStep) : (circle.radius += changeSizeStep);
-            updateCircleChilds();
+            if (Math.abs(sizeDifference) <= changeSizeStep) {
+              circle.radius = circle.targetRadius;
+              container.cacheAsBitmap = true;
+            } else {
+              circle.radius += sizeDifference > 0 ? changeSizeStep : -changeSizeStep;
+              updateCircleChilds();
+            }
           }
         }
       }
@@ -149,15 +143,13 @@ export class BubblesUtils {
   };
 
   static handleEmptySpaceClick = (event: MouseEvent, circles: Circle[]) => {
-    const waveForce = 100; // Adjust the wave force as needed
-
+    const waveForce = 100;
     circles.forEach((circle) => {
       const dx = circle.x - event.clientX;
       const dy = circle.y - event.clientY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       const angle = Math.atan2(dy, dx);
 
-      // Apply a force to push the balls away from the click point
       circle.vx += (waveForce * Math.cos(angle)) / distance;
       circle.vy += (waveForce * Math.sin(angle)) / distance;
     });
@@ -165,50 +157,47 @@ export class BubblesUtils {
 
   static handleMouseMove = (event: MouseEvent, circles: Circle[]) => {
     const index = circles.findIndex((circle) => circle.dragging);
-
     if (index !== -1) {
       const circle = circles[index];
-
-      // Calculate the velocity based on mouse movement
       const dx = event.clientX - circle.x;
       const dy = event.clientY - circle.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      const speed = 3; // Adjust the speed factor as needed
+      const speed = 3;
       circle.vx = (dx / distance) * speed;
       circle.vy = (dy / distance) * speed;
     }
   };
 
-  static generateCircles = (coins: CoingeckoCoinData[], scalingFactor: number, bubbleSort: PriceChangePercentage = PriceChangePercentage.HOUR) => {
-    const shapes: Circle[] = coins.map((item) => {
-      const radius = Math.abs(item[bubbleSort]! * scalingFactor);
+  static generateCircles = (collections: NFTCollectionData[], scalingFactor: number, bubbleSort: PriceChangePercentage = PriceChangePercentage.HOUR): Circle[] => {
+    return collections.map((item) => {
+      const value = item[bubbleSort] ?? 0;
+      const radius = Math.abs(value * scalingFactor);
+      
+      // Generate a symbol from the name if none provided
+      const displaySymbol = item.symbol || item.name.slice(0, 4).toUpperCase();
 
-      const data = {
+      const baseData = {
         id: item.id,
-        symbol: item.symbol.slice(0, 4),
+        symbol: displaySymbol,
         image: item.image,
-        coinName: item.symbol,
+        coinName: item.name,
         x: Math.random() * (width - radius * 2),
         y: Math.random() * (height - radius * 2),
         vx: Math.random() * speed * 2 - speed,
         vy: Math.random() * speed * 2 - speed,
-        color: item[bubbleSort]! > 0 ? "green" : "red",
-        targetRadius: radius > maxCircleSize ? maxCircleSize : radius > minCircleSize ? radius : minCircleSize,
+        color: value > 0 ? "green" : "red",
+        targetRadius: Math.max(minCircleSize, Math.min(maxCircleSize, radius)),
         radius: minCircleSize,
         dragging: false,
-        text2: null,
-        [PriceChangePercentage.HOUR]: item[PriceChangePercentage.HOUR],
-        [PriceChangePercentage.DAY]: item[PriceChangePercentage.DAY],
-        [PriceChangePercentage.WEEK]: item[PriceChangePercentage.WEEK],
-        [PriceChangePercentage.MONTH]: item[PriceChangePercentage.MONTH],
-        [PriceChangePercentage.YEAR]: item[PriceChangePercentage.YEAR],
+        text2: null as PIXI.Text | null,
+        [PriceChangePercentage.HOUR]: item.volume_24h ?? 0,
+        [PriceChangePercentage.DAY]: item.volume_7d ?? 0,
+        [PriceChangePercentage.WEEK]: item.volume_30d ?? 0,
+        [PriceChangePercentage.MONTH]: item.volume_90d ?? 0,
+        [PriceChangePercentage.YEAR]: item.collection_score ?? 0,
       };
 
-      const shape = { ...data, text2: PixiUtils.createText2(data, bubbleSort) };
-
-      return shape;
+      return { ...baseData, text2: PixiUtils.createText2(baseData, bubbleSort) };
     });
-
-    return shapes;
   };
 }

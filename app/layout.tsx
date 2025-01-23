@@ -1,23 +1,47 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 
+// Import styles
 import "@/app/ui/globals.scss";
 import "primereact/resources/primereact.css";
 import "primereact/resources/themes/md-dark-deeppurple/theme.css";
+
+// Import components
 import { PrimeReactProviders } from "./providers";
 import Header from "./ui/Header";
 
-const inter = Poppins({ subsets: ["latin"], weight: ["400"] });
+// Configure font
+const poppins = Poppins({ 
+  subsets: ["latin"], 
+  weight: ["400"],
+  display: 'swap'
+});
 
-const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL ? `${process.env.NEXT_PUBLIC_VERCEL_URL}` : "http://localhost:3000";
+// Get base URL dynamically
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  }
+  return 'http://localhost:3000';
+};
 
+// Metadata configuration
 export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
+  metadataBase: new URL(getBaseUrl()),
   title: {
-    default: "CryptoBubbles | Interactive visualization using Pixi.js!",
-    template: `%s | CryptoBubbles`,
+    default: "NFTBubbles | Analyse NFTs!",
+    template: `%s | NFTBubbles`,
   },
-  description: "General info abouttop 250 cryptocurrencies.",
+  description: "Interactive NFT Collection Analytics",
+  icons: {
+    icon: '/favicon.ico',
+  },
+};
+
+// Viewport configuration (separated from metadata)
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -27,11 +51,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={inter.className + " bg-zinc-900 text-white "}>
+      <body className={`${poppins.className} bg-zinc-900 text-white min-h-screen`}>
         <Header />
-        <div className="mt-2">
+        <main className="mt-2">
           <PrimeReactProviders>{children}</PrimeReactProviders>
-        </div>
+        </main>
       </body>
     </html>
   );

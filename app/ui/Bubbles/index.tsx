@@ -1,7 +1,10 @@
-"use client";
-
+import { NFTCollectionData } from "@/types/nft.types";
 import Bubbles from "./Bubbles";
 
-export default function BubblesPage({ coins }: any) {
-  return <Bubbles coins={coins} />;
+interface Props {
+  collections: NFTCollectionData[];
+}
+
+export default function BubblesPage({ collections }: Props) {
+  return <Bubbles collections={collections} />;
 }

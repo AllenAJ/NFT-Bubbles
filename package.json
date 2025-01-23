@@ -6,11 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean": "rm -rf .next node_modules",
+    "dev:clean": "npm run clean && npm install && npm run dev"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "gsap": "^3.12.7",
     "lightweight-charts": "^4.1.3",
     "lucide-react": "^0.315.0",
     "next": "14.1.0",
@@ -18,6 +21,7 @@
     "primereact": "^10.5.1",
     "react": "^18",
     "react-dom": "^18",
+    "recharts": "^2.15.0",
     "sass": "^1.70.0",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7"
@@ -30,6 +34,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
     "postcss": "^8",
+    "string-replace-loader": "^3.1.0",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
   }

@@ -1,26 +1,15 @@
-import { CoingeckoCoinData } from "@/types/coingecko.type";
-import MarketInfo from "../ui/MarketInfo";
+// app/market-info/page.tsx
+import { getNFTCollections } from "../page";  // Import the data fetching function from main page
+import { NFTCollectionData } from "@/types/nft.types";
+import NFTTable from "../ui/NFTTable";
 
-async function getCoins(): Promise<CoingeckoCoinData[]> {
-  const response = await fetch(
-    "https://api.coingecko.com/api/v3/" +
-      "coins/markets?" +
-      "vs_currency=usd" +
-      "&order=market_cap_desc" +
-      "&per_page=250" +
-      `&page=${1}` +
-      "&sparkline=true" +
-      "&price_change_percentage=1h%2C24h%2C7d%2C30d%2C1y" +
-      "&locale=en" +
-      `&x_cg_demo_api_key=${process.env.COINGECKO_API_SECRET_KEY}`
+export default async function MarketInfoPage() {
+  // Reuse the same data from the main page
+  const collections = await getNFTCollections();
+
+  return (
+    <div className="container mx-auto py-8">
+      <NFTTable collections={collections} />
+    </div>
   );
-
-  const data = await response.json();
-  return data;
-}
-
-export default async function MarketInfoPaage() {
-  const coins = await getCoins();
-
-  return <MarketInfo coins={coins} />;
 }

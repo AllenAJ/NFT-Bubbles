@@ -1,11 +1,12 @@
-import { Text } from "pixi.js";
+// types/bubbles.types.ts
+import * as PIXI from "pixi.js";
 
 export enum PriceChangePercentage {
-  HOUR = "price_change_percentage_1h_in_currency",
-  DAY = "price_change_percentage_24h_in_currency",
-  WEEK = "price_change_percentage_7d_in_currency",
-  MONTH = "price_change_percentage_30d_in_currency",
-  YEAR = "price_change_percentage_1y_in_currency",
+  HOUR = "volume_24h",
+  DAY = "volume_7d",
+  WEEK = "volume_30d",
+  MONTH = "volume_90d",
+  YEAR = "collection_score"
 }
 
 export type Circle = {
@@ -26,5 +27,5 @@ export type Circle = {
   [PriceChangePercentage.MONTH]: number;
   [PriceChangePercentage.YEAR]: number;
   image: string;
-  text2: Text | null;
+  text2: PIXI.Text | null;
 };
